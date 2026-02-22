@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:taskmaster/models/task_model.dart';
-import 'package:taskmaster/reusable_widgets/reusable_widgets.dart';
 
 class SqliteDatabase {
   final String _dbName = 'TaskMaster.db';
@@ -34,11 +33,13 @@ class SqliteDatabase {
     try {
       final db = await getTaskDatabase();
       final taskData = await db.query("TASKS");
-      final tasks =taskData.map((e) => Task.fromJson(json: e)).toList();
+      final tasks = taskData.map((e) => Task.fromJson(json: e)).toList();
       return tasks;
     } on DatabaseException catch (dbErr) {
+      Fluttertoast.showToast(msg: dbErr.result.toString());
       return [];
     } catch (other) {
+      Fluttertoast.showToast(msg: other.toString());
       return [];
     }
   }

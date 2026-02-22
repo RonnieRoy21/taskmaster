@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:taskmaster/database/sqlite_database.dart';
-import 'package:taskmaster/models/task_model.dart';
 
 class ViewTask extends StatefulWidget {
   const ViewTask({super.key});
