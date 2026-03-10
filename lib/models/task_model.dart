@@ -1,8 +1,9 @@
 class Task {
   final String taskDetail, taskTitle, dueDate;
   final bool taskStatus;
+  final int? taskId;
 
-  Task({
+  Task(this.taskId,{
     required this.taskDetail,
     required this.taskTitle,
     required this.dueDate,
@@ -11,6 +12,7 @@ class Task {
 
   factory Task.fromJson({required Map<String, dynamic> json}) {
     return Task(
+      json['task_id'],
       taskTitle: json['task_title'].toString(),
       taskDetail: json['task_detail'] ?? "None",
       dueDate: json['task_due_date'].toString(),

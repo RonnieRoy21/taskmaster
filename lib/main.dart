@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:taskmaster/screens/add_task.dart';
+import 'package:taskmaster/screens/view_expense.dart';
 import 'package:taskmaster/screens/view_task.dart';
 
 void main() {
@@ -14,13 +15,15 @@ class Main extends StatefulWidget {
 }
 
 class _Main extends State<Main> {
-  List<Widget> screens = [AddTask(), ViewTask()];
+  List<Widget> screens = [AddTask(), ViewTask(), ViewExpense()];
   List<BottomNavigationBarItem> screenIcons = [
     BottomNavigationBarItem(icon: Icon(Icons.add), label: 'Add Task'),
     BottomNavigationBarItem(
       icon: Icon(Icons.view_carousel),
       label: 'View Tasks',
     ),
+
+    BottomNavigationBarItem(icon: Icon(Icons.money), label: 'Expenses'),
   ];
   int currentIndex = 0;
   @override
@@ -28,6 +31,8 @@ class _Main extends State<Main> {
     return Scaffold(
       body: screens[currentIndex],
       bottomNavigationBar: BottomNavigationBar(
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.brown,
         currentIndex: currentIndex,
         onTap: (value) {
           setState(() {

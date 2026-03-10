@@ -18,20 +18,23 @@ class SqliteDatabase {
   }
 
   Future<String> insertTask(Task task) async {
+    final db = await getTaskDatabase();
     try {
-      final db = await getTaskDatabase();
       await db.insert('TASKS', task.taskToJson());
+
       return 'success';
     } on DatabaseException catch (err) {
       return err.result.toString();
     } catch (other) {
       return other.toString();
+    } finally {
+      db.close();
     }
   }
 
   Future<List<Task>> getTasks() async {
+    final db = await getTaskDatabase();
     try {
-      final db = await getTaskDatabase();
       final taskData = await db.query("TASKS");
       final tasks = taskData.map((e) => Task.fromJson(json: e)).toList();
       return tasks;
@@ -41,6 +44,39 @@ class SqliteDatabase {
     } catch (other) {
       Fluttertoast.showToast(msg: other.toString());
       return [];
+    } finally {
+      db.close();
+    }
+  }
+
+  Future<void> markTaskAsDone({required int id}) async {
+    final db = await getTaskDatabase();
+    try {
+      db.update(
+        "TASKS",
+        {'task_status': true},
+        where: 'task_id = ?',
+        whereArgs: [id],
+      );
+    } on DatabaseException catch (dbErr) {
+      Fluttertoast.showToast(msg: dbErr.result.toString());
+    } catch (err) {
+      Fluttertoast.showToast(msg: err.toString());
+    } finally {
+      db.close();
+    }
+  }
+
+  Future<void> deleteTask({required int id}) async {
+    final db = await getTaskDatabase();
+    try {
+      db.delete("TASKS", where: 'task_id= ?', whereArgs: [id]);
+    } on DatabaseException catch (dbError) {
+      Fluttertoast.showToast(msg: dbError.result.toString());
+    } catch (err) {
+      Fluttertoast.showToast(msg: err.toString());
+    } finally {
+      db.close();
     }
   }
 }

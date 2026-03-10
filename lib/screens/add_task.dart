@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:taskmaster/database/sqlite_database.dart';
+import 'package:taskmaster/database/task_database.dart';
 import 'package:taskmaster/models/task_model.dart';
 import 'package:taskmaster/reusable_widgets/reusable_widgets.dart';
 
@@ -92,6 +92,7 @@ class _AddTaskState extends State<AddTask> {
                             final String res = await SqliteDatabase()
                                 .insertTask(
                                   Task(
+                                    null,
                                     taskDetail: _descriptionController.text,
                                     taskTitle: _titleController.text,
                                     dueDate: _dateController.text,
