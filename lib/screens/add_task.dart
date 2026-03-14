@@ -27,6 +27,14 @@ class _AddTaskState extends State<AddTask> {
   }
 
   @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _dateController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.blue,
@@ -38,6 +46,7 @@ class _AddTaskState extends State<AddTask> {
             border: BoxBorder.all(width: 2, style: BorderStyle.solid),
           ),
           child: Form(
+            autovalidateMode: AutovalidateMode.always,
             key: _formKey,
             child: SingleChildScrollView(
               child: Column(
@@ -89,26 +98,29 @@ class _AddTaskState extends State<AddTask> {
                       ElevatedButton(
                         onPressed: () async {
                           if (_formKey.currentState!.validate()) {
-                            final String res = await SqliteDatabase()
-                                .insertTask(
-                                  Task(
-                                    null,
-                                    taskDetail: _descriptionController.text,
-                                    taskTitle: _titleController.text,
-                                    dueDate: _dateController.text,
-                                    taskStatus: false,
-                                  ),
-                                );
-                            if (res.toString() == 'success') {
-                              ReusableWidgets().snackBar('Task Added', context);
-                            }
-                          } else {
-                            ReusableWidgets().snackBar('Failed', context);
+                            await SqliteDatabase().insertTask(
+                              Task(
+                                null,
+                                taskDetail: _descriptionController.text,
+                                taskTitle: _titleController.text,
+                                dueDate: _dateController.text,
+                                taskStatus: false,
+                              ),
+                            );
+
+                            Navigator.pop(context);
                           }
                         },
                         child: Text('Save'),
                       ),
-                      ElevatedButton(onPressed: () {}, child: Text('Clear')),
+                      ElevatedButton(
+                        onPressed: () {
+                          _dateController.clear();
+                          _descriptionController.clear();
+                          _titleController.clear();
+                        },
+                        child: Text('Clear'),
+                      ),
                     ],
                   ),
                 ],

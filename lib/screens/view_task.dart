@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:taskmaster/database/task_database.dart';
 import 'package:taskmaster/models/task_model.dart';
+import 'package:taskmaster/screens/add_task.dart';
 
 class ViewTask extends StatefulWidget {
   const ViewTask({super.key});
@@ -11,58 +12,116 @@ class ViewTask extends StatefulWidget {
 }
 
 class _ViewTaskState extends State<ViewTask> {
-  late final Future _tasksFuture;
+  late Future<List<Task>> tasksFuture;
+  int numberTasks = 0;
+
+  Future<List<Task>> _tasksFuture() async {
+    return await SqliteDatabase().getTasks();
+  }
 
   @override
   void initState() {
     super.initState();
-    _tasksFuture = SqliteDatabase().getTasks();
+    tasksFuture = _tasksFuture();
+    countTodaysTasks();
   }
 
-  Future onRefreshMethod() async {
-    _tasksFuture = SqliteDatabase().getTasks();
+  Future<void> countTodaysTasks() async {
+    final number = await SqliteDatabase().getTodaysTasks();
+    setState(() {
+      numberTasks = number;
+    });
+  }
+
+  void refreshTasks() {
+    setState(() {
+      tasksFuture = _tasksFuture();
+    });
+    countTodaysTasks();
   }
 
   void showDetails({required Task task}) {
     showModalBottomSheet(
       context: context,
       useSafeArea: true,
-      sheetAnimationStyle: AnimationStyle(
-        curve: Curves.easeInOutCubic,
-        duration: Duration(seconds: 1),
-      ),
       builder: (context) {
         return AlertDialog(
           actions: [
             Column(
-              mainAxisAlignment: MainAxisAlignment.start,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Title :\n ${task.taskTitle}'),
-                const SizedBox(height: 8.0),
+                const SizedBox(height: 8),
+
                 Text('Description :\n ${task.taskDetail}'),
-                const SizedBox(height: 8.0),
+                const SizedBox(height: 8),
+
                 Text('Due on :\n ${task.dueDate}'),
-                const SizedBox(height: 8.0),
+                const SizedBox(height: 8),
+
                 (task.taskStatus == false)
-                    ? Text('Status ---> Pending')
-                    : Text('Status ---> Done'),
-                const SizedBox(height: 8.0),
+                    ? const Text('Status ---> Pending')
+                    : const Text('Status ---> Done'),
+
+                const SizedBox(height: 10),
+
                 Row(
                   mainAxisAlignment: MainAxisAlignment.end,
                   children: [
                     ElevatedButton(
-                      onPressed: () {
+                      onPressed: () async {
                         if (task.taskId == null) {
-                          Fluttertoast.showToast(msg: " Can't find id");
+                          Fluttertoast.showToast(msg: "Can't find id");
+                          return;
                         }
-                        SqliteDatabase().markTaskAsDone(id: task.taskId!);
+
+                        await SqliteDatabase().markTaskAsDone(id: task.taskId!);
+
                         Fluttertoast.showToast(msg: 'Marked as Done');
+
                         Navigator.pop(context);
+
+                        refreshTasks();
                       },
-                      child: Text('Mark as Done'),
+                      child: const Text('Mark as Done'),
                     ),
                   ],
+                ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void deletedTask({required int id}) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          iconColor: Colors.red,
+          icon: const Icon(Icons.delete),
+          title: const Text('Delete Task ?'),
+          actions: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton(
+                  onPressed: () async {
+                    await SqliteDatabase().deleteTask(id: id);
+
+                    Navigator.pop(context);
+
+                    refreshTasks();
+                  },
+                  child: const Text('Delete'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text('Cancel'),
                 ),
               ],
             ),
@@ -76,74 +135,104 @@ class _ViewTaskState extends State<ViewTask> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.amber[100],
-      appBar: AppBar(centerTitle: true, title: Text('Tasks')),
-      body: RefreshIndicator(
-        onRefresh: () => onRefreshMethod(),
-        child: FutureBuilder(
-          future: _tasksFuture,
-          builder: (context, snapshot) {
-            if (!snapshot.hasData &&
-                snapshot.connectionState == ConnectionState.waiting) {
-              return CircularProgressIndicator();
-            }
-            if (snapshot.hasError) {
-              return Center(child: Text(snapshot.error.toString()));
-            }
-            if (!snapshot.hasData &&
-                snapshot.connectionState == ConnectionState.done) {
-              return Center(child: Text('No Tasks'));
-            }
-            final taskList = snapshot.data! as List;
-            return ListView.builder(
-              itemCount: taskList.length,
-              itemBuilder: (context, index) {
-                final task = taskList[index];
-                return InkWell(
-                  customBorder: Border.all(),
-                  onTap: () => showDetails(task: task),
-                  onLongPress: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) {
-                        return AlertDialog(
-                          iconColor: Colors.red,
-                          icon: Icon(Icons.delete),
-                          title: Text('Delete Task ?'),
-                          actions: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () {
-                                    SqliteDatabase().deleteTask(
-                                      id: task.taskId,
-                                    );
-                                    Navigator.pop(context);
-                                    setState(() {});
-                                  },
-                                  child: Text('Delete'),
-                                ),
-                                ElevatedButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: Text('Cancel'),
-                                ),
-                              ],
-                            ),
-                          ],
-                        );
-                      },
+      appBar: AppBar(centerTitle: true, title: const Text('Tasks')),
+
+      body: FutureBuilder(
+        future: tasksFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(child: Text(snapshot.error.toString()));
+          }
+
+          final List<Task> taskList = snapshot.data ?? [];
+
+          if (taskList.isEmpty) {
+            return Column(
+              children: [
+                SizedBox(
+                  height: MediaQuery.of(context).size.height * 0.1,
+                  child: ListTile(
+                    title: Text("Today's Incomplete Tasks : $numberTasks"),
+                  ),
+                ),
+
+                const Divider(thickness: 1, color: Colors.brown),
+
+                InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const AddTask()),
+                    ).whenComplete(() => refreshTasks());
+                  },
+                  child: const Card(
+                    color: Colors.green,
+                    child: ListTile(title: Text('Add a Task')),
+                  ),
+                ),
+
+                const Divider(thickness: 1, color: Colors.brown),
+
+                const Expanded(child: Center(child: Text('No Tasks'))),
+              ],
+            );
+          }
+
+          return Column(
+            children: [
+              SizedBox(
+                height: MediaQuery.of(context).size.height * 0.1,
+                child: ListTile(
+                  title: Text("Today's Incomplete Tasks : $numberTasks"),
+                ),
+              ),
+
+              const Divider(thickness: 1, color: Colors.brown),
+
+              InkWell(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const AddTask()),
+                  ).whenComplete(() => refreshTasks());
+                },
+                child: const Card(
+                  color: Colors.green,
+                  child: ListTile(title: Text('Add a Task')),
+                ),
+              ),
+
+              const Divider(thickness: 1, color: Colors.brown),
+
+              Expanded(
+                child: ListView.builder(
+                  itemCount: taskList.length,
+                  itemBuilder: (context, index) {
+                    final task = taskList[index];
+
+                    return InkWell(
+                      onTap: () => showDetails(task: task),
+                      onLongPress: () => deletedTask(id: task.taskId!),
+
+                      child: ListTile(
+                        title: Text(task.taskTitle),
+                        subtitle: Text(task.dueDate),
+
+                        trailing: (task.taskStatus == false)
+                            ? const Text('Pending')
+                            : const Text('Done'),
+                      ),
                     );
                   },
-                  child: ListTile(
-                    title: Text(task.taskTitle.toString()),
-                    subtitle: Text(task.dueDate.toString()),
-                    trailing: Text('Done ? : ${task.taskStatus.toString()}'),
-                  ),
-                );
-              },
-            );
-          },
-        ),
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
