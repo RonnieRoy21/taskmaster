@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:taskmaster/database/expense_databse.dart';
 import 'package:taskmaster/models/expense_model.dart';
 import 'package:taskmaster/reusable_widgets/reusable_widgets.dart';
@@ -33,13 +32,13 @@ Widget addExpense(BuildContext context) {
     return DropdownMenuItem<String>(value: category, child: Text(category));
   }).toList();
 
-  final TextEditingController _amountController = TextEditingController();
-  final TextEditingController _categoryController = TextEditingController();
-  final TextEditingController _dateController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  final TextEditingController _confirmationNoController =
+  final TextEditingController amountController = TextEditingController();
+  final TextEditingController categoryController = TextEditingController();
+  final TextEditingController dateController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController confirmationNoController =
       TextEditingController();
-  final TextEditingController _paymentMessageController =
+  final TextEditingController paymentMessageController =
       TextEditingController();
   final formManualKey = GlobalKey<FormState>();
   final formMessageKey = GlobalKey<FormState>();
@@ -85,7 +84,7 @@ Widget addExpense(BuildContext context) {
                   hint: Text('Select a Category'),
                   items: categoryItems,
                   onChanged: (newValue) {
-                    _categoryController.text = newValue.toString().trim();
+                    categoryController.text = newValue.toString().trim();
                   },
                   validator: (value) {
                     if (value.toString().isEmpty || value == null) {
@@ -98,7 +97,7 @@ Widget addExpense(BuildContext context) {
                 const SizedBox(height: 8),
                 ReusableWidgets().textFormField(
                   8,
-                  controller: _amountController,
+                  controller: amountController,
                   readOnly: false,
                   label: 'Amount Used',
                   keyboard: TextInputType.phone,
@@ -107,7 +106,7 @@ Widget addExpense(BuildContext context) {
                 const SizedBox(height: 8),
                 ReusableWidgets().textFormField(
                   100,
-                  controller: _descriptionController,
+                  controller: descriptionController,
                   readOnly: false,
                   label: 'Description',
                   keyboard: TextInputType.text,
@@ -116,7 +115,7 @@ Widget addExpense(BuildContext context) {
                 const SizedBox(height: 8),
                 TextFormField(
                   autovalidateMode: AutovalidateMode.always,
-                  controller: _dateController,
+                  controller: dateController,
                   decoration: InputDecoration(
                     border: OutlineInputBorder(),
                     hintText: 'Select Date',
@@ -130,13 +129,13 @@ Widget addExpense(BuildContext context) {
                       currentDate: DateTime.now(),
                     );
 
-                    _dateController.text = date.toString().split(' ')[0];
+                    dateController.text = date.toString().split(' ')[0];
                   },
                 ),
                 const SizedBox(height: 8),
                 ReusableWidgets().textFormField(
                   10,
-                  controller: _confirmationNoController,
+                  controller: confirmationNoController,
                   label: 'Payment Confirmation Number',
                   readOnly: false,
                   keyboard: TextInputType.text,
@@ -159,7 +158,7 @@ Widget addExpense(BuildContext context) {
             key: formMessageKey,
             autovalidateMode: AutovalidateMode.onUserInteraction,
             child: TextFormField(
-              controller: _paymentMessageController,
+              controller: paymentMessageController,
               maxLines: 7,
               keyboardType: TextInputType.text,
               textInputAction: TextInputAction.done,
@@ -170,12 +169,12 @@ Widget addExpense(BuildContext context) {
               ),
               onChanged: (newValue) {
                 final response = expenseMessageDeocoder(newValue.toString());
-                _amountController.text = response['payAmount'].toString();
-                _descriptionController.text = response['payDescription'];
-                _dateController.text = response['payDate']
+                amountController.text = response['payAmount'].toString();
+                descriptionController.text = response['payDescription'];
+                dateController.text = response['payDate']
                     .toString()
                     .replaceAll('/', '-');
-                _confirmationNoController.text = response['payId'];
+                confirmationNoController.text = response['payId'];
               },
             ),
           ),
@@ -192,19 +191,19 @@ Widget addExpense(BuildContext context) {
                   await ExpenseDatabse().insertExpense(
                     ExpenseModel(
 
-                      expenseCost: double.parse(_amountController.text.trim()),
-                      expenseCategory: _categoryController.text.trim(),
-                      expenseConfirmationNumber: _confirmationNoController.text.trim(),
-                      expenseDate: _dateController.text.trim(),
-                      expenseDescription: _descriptionController.text.trim()
+                      expenseCost: double.parse(amountController.text.trim()),
+                      expenseCategory: categoryController.text.trim(),
+                      expenseConfirmationNumber: confirmationNoController.text.trim(),
+                      expenseDate: dateController.text.trim(),
+                      expenseDescription: descriptionController.text.trim()
                     ),
                   );
-                  _paymentMessageController.clear();
-                  _dateController.clear();
-                  _confirmationNoController.clear();
-                  _categoryController.clear();
-                  _descriptionController.clear();
-                  _confirmationNoController.clear();
+                  paymentMessageController.clear();
+                  dateController.clear();
+                  confirmationNoController.clear();
+                  categoryController.clear();
+                  descriptionController.clear();
+                  confirmationNoController.clear();
                 },
                 child: Text('Save'),
               ),
